@@ -5,3 +5,4 @@ analyzer:
     - build/**
     - lib/generated_plugin_registrant.dart
     - macos/
+    - test/**

@@ -17,6 +17,7 @@ import 'framework/framework_core.dart';
 import 'primitives/auto_dispose_mixin.dart';
 import 'screens/app_size/app_size_controller.dart';
 import 'screens/app_size/app_size_screen.dart';
+import 'screens/bloc_manager/bloc_manager_screen.dart';
 import 'screens/debugger/debugger_controller.dart';
 import 'screens/debugger/debugger_screen.dart';
 import 'screens/inspector/inspector_controller.dart';
@@ -585,6 +586,8 @@ List<DevToolsScreen> get defaultScreens {
       createController: () => LoggingController(),
     ),
     DevToolsScreen<void>(const ProviderScreen(), createController: () {}),
+    DevToolsScreen<void>(const BlocManagerScreen(), createController: () {}),
+
     DevToolsScreen<AppSizeController>(
       const AppSizeScreen(),
       createController: () => AppSizeController(),
