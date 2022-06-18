@@ -13,15 +13,18 @@ class BlocManagerOperation extends Equatable {
     required this.event,
     required this.blocName,
     required this.state,
+    required this.key,
   });
 
   /// Initializes a new [BlocManagerOperation] from a JSON Map.
-  factory BlocManagerOperation.fromMap(Map<String, dynamic> map) =>
-      BlocManagerOperation(
-        event: BlocEvent.fromString(map['event']),
-        blocName: map['bloc'],
-        state: map['state'],
-      );
+  factory BlocManagerOperation.fromMap(Map<String, dynamic> map) {
+    return BlocManagerOperation(
+      event: BlocEvent.fromString(map['event']),
+      blocName: map['bloc'],
+      state: map['state'],
+      key: map['key'],
+    );
+  }
 
   /// The type of event sent by the `BlocManager` library.
   final BlocEvent event;
@@ -32,19 +35,24 @@ class BlocManagerOperation extends Equatable {
   /// The state of the bloc at the time the event was fired.
   final String state;
 
+  /// The key identifier of the bloc in the manager's repository.
+  final String key;
+
   BlocManagerOperation copyWith({
     BlocEvent? event,
     String? blocName,
     String? state,
+    String? key,
   }) =>
       BlocManagerOperation(
         event: event ?? this.event,
         blocName: blocName ?? this.blocName,
         state: state ?? this.state,
+        key: key ?? this.key,
       );
 
   @override
-  List<Object> get props => [event, blocName, state];
+  List<Object> get props => [event, blocName, state, key];
 }
 
 /// Types of events that `BlocManager` package sends.

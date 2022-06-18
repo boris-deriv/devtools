@@ -6,6 +6,7 @@ import '../../../../shared/eval_on_dart_library.dart';
 import '../../logic/states/bloc_manager_operation/bloc_manager_operation_cubit.dart';
 import '../../logic/states/bloc_manager_repository/cubit/bloc_manager_repository_cubit.dart';
 import '../../utils/extensions.dart';
+import '../widgets/bloc_manager_events_record.dart';
 import '../widgets/registered_blocs_list.dart';
 
 class BlocManagerScreen extends Screen {
@@ -92,36 +93,32 @@ class _BlocManagerScreenBodyState extends State<BlocManagerScreenBody> {
             children: [
               AreaPaneHeader(
                 needsTopBorder: false,
-                title: SizedBox(
-                  width: 128,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Registered Blocs',
-                        style: Theme.of(context).textTheme.titleMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                      StreamBuilder<BlocManagerRepositoryState>(
-                        stream:
-                            context.read<BlocManagerRepositoryCubit>().stream,
-                        builder: (context, snapshot) {
-                          if (snapshot.hasData) {
-                            final state = snapshot.data;
-                            if (state is BlocManagerRepositoryLoaded) {
-                              final blocs = state.nodes;
-                              return Chip(label: Text('${blocs.length}'));
-                            }
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Registered Blocs',
+                      style: Theme.of(context).textTheme.titleMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    StreamBuilder<BlocManagerRepositoryState>(
+                      stream: context.read<BlocManagerRepositoryCubit>().stream,
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          final state = snapshot.data;
+                          if (state is BlocManagerRepositoryLoaded) {
+                            final blocs = state.nodes;
+                            return Chip(label: Text('${blocs.length}'));
                           }
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const CenteredCircularProgressIndicator();
-                          }
-                          return const SizedBox.shrink();
-                        },
-                      )
-                    ],
-                  ),
+                        }
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const CenteredCircularProgressIndicator();
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    )
+                  ],
                 ),
               ),
               const Expanded(child: RegisteredBlocsList()),
@@ -134,35 +131,12 @@ class _BlocManagerScreenBodyState extends State<BlocManagerScreenBody> {
               AreaPaneHeader(
                 needsTopBorder: false,
                 title: Text(
-                  'Details',
+                  'Bloc Manager Events',
                   style: Theme.of(context).textTheme.titleMedium,
                   textAlign: TextAlign.center,
                 ),
               ),
-              Expanded(
-                child: StreamBuilder<OperationState>(
-                  stream: context.read<BlocManagerOperationsCubit>().stream,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (snapshot.hasData) {
-                      final state = snapshot.data;
-                      if (state is OperationLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (state is OperationLoaded) {
-                        return ListTile(
-                          isThreeLine: true,
-                          title: Text(state.operation.blocName),
-                          subtitle: Text(state.operation.state),
-                        );
-                      }
-                    }
-                    return const Center(child: Text('Unknown Error>'));
-                  },
-                ),
-              )
+              const Expanded(child: BlocManagerEventsRecord())
             ],
           ),
         )
