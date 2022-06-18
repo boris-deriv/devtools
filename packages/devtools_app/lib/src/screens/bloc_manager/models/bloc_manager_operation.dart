@@ -75,7 +75,7 @@ class BlocManagerOperation extends Equatable {
 ///       'event':'register',
 ///       'bloc':'${bloc.runtimeType}',
 ///       'state': '${bloc.state}',
-///       'key': 'key'.
+///       'key': key.
 ///    }
 ///  );
 /// }
