@@ -8,28 +8,30 @@ import '../../../../utils/cubit.dart';
 part 'bloc_manager_repository_state.dart';
 
 class BlocManagerRepositoryCubit extends Cubit<BlocManagerRepositoryState> {
-  BlocManagerRepositoryCubit(this._libraryEval)
-      : super(const BlocManagerRepositoryInitial());
+  BlocManagerRepositoryCubit({Disposable? isAlive})
+      : _isAlive = isAlive ?? Disposable(),
+        super(const BlocManagerRepositoryInitial());
 
-  final DisposableEvalOnLibrary _libraryEval;
+  final Disposable _isAlive;
 
-  Future<void> getNodes() async {
+  /// Gets blocs from the `BlocManager` object's repository.
+  Future<void> getRegisteredBlocs(EvalOnDartLibrary blocManagerEval) async {
     emit(const BlocManagerRepositoryLoading());
     try {
-      final nodes = await _fetchBlocNodes();
+      final nodes = await _getRepositoryContent(blocManagerEval);
       emit(BlocManagerRepositoryLoaded(nodes));
     } catch (e) {
       emit(BlocManagerRepositoryFailure(message: '$e'));
     }
   }
 
-  Future<List<BlocNode>> _fetchBlocNodes() async {
-    final bmRef = await _libraryEval.safeEval(
+  Future<List<BlocNode>> _getRepositoryContent(EvalOnDartLibrary eval) async {
+    final bmRef = await eval.safeEval(
       'BlocManager.instance.repository',
-      isAlive: _libraryEval,
+      isAlive: _isAlive,
     );
 
-    final instance = await _libraryEval.getInstance(bmRef, _libraryEval);
+    final instance = await eval.getInstance(bmRef, _isAlive);
 
     final associations = instance?.associations;
     final items = <BlocNode>[];
@@ -39,12 +41,6 @@ class BlocManagerRepositoryCubit extends Cubit<BlocManagerRepositoryState> {
     }
 
     return items;
-  }
-
-  @override
-  Future<void> close() async {
-    _libraryEval.dispose();
-    await super.close();
   }
 }
 

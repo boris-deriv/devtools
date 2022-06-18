@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../../devtools_app.dart';
+import '../../../../shared/eval_on_dart_library.dart';
 import '../../logic/states/bloc_manager_operation/bloc_manager_operation_cubit.dart';
 import '../../logic/states/bloc_manager_repository/cubit/bloc_manager_repository_cubit.dart';
 import '../../utils/extensions.dart';
+import '../widgets/registered_blocs_list.dart';
 
 class BlocManagerScreen extends Screen {
   const BlocManagerScreen()
@@ -28,16 +30,19 @@ class BlocManagerScreen extends Screen {
       builder: (context, snapshot) {
         if (snapshot.hasData && snapshot.data != null) {
           final service = snapshot.data!;
-          return Provider(
-            create: (context) => BlocManagerOperationsCubit(),
+          return MultiProvider(
+            providers: [
+              Provider(create: (context) => BlocManagerOperationsCubit()),
+              Provider(create: (context) => BlocManagerRepositoryCubit()),
+            ],
             child: BlocManagerScreenBody(service: service),
           );
         }
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const CenteredCircularProgressIndicator();
         }
 
-        return const Center(child: Text('Unknown error'));
+        return const CenteredMessage('Unknown error');
       },
     );
   }
@@ -53,8 +58,7 @@ class BlocManagerScreenBody extends StatefulWidget {
 }
 
 class _BlocManagerScreenBodyState extends State<BlocManagerScreenBody> {
-  late final BlocManagerRepositoryCubit _nodesCubit;
-  late final eval = DisposableEvalOnLibrary(
+  late final eval = EvalOnDartLibrary(
     'package:flutter_deriv_bloc_manager/bloc_managers/bloc_manager.dart',
     widget.service,
   );
@@ -63,23 +67,24 @@ class _BlocManagerScreenBodyState extends State<BlocManagerScreenBody> {
   void initState() {
     super.initState();
 
-    _nodesCubit = BlocManagerRepositoryCubit(eval)..getNodes();
-
-    widget
-      ..service
-          .onExtensionEvent
-          .where((event) => event.isBlocManagerEvent)
-          .listen((event) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.read<BlocManagerOperationsCubit>().getOperations(event);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<BlocManagerRepositoryCubit>().getRegisteredBlocs(eval);
+      widget
+        ..service
+            .onExtensionEvent
+            .where((event) => event.isBlocManagerEvent)
+            .listen((event) {
+          if (mounted) {
+            context.read<BlocManagerOperationsCubit>().getOperations(event);
+          }
         });
-      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Split(
-      initialFractions: const [0.33, 0.67],
+      initialFractions: const [0.4, 0.6],
       axis: Split.axisFor(context, 0.75),
       children: [
         OutlineDecoration(
@@ -87,43 +92,39 @@ class _BlocManagerScreenBodyState extends State<BlocManagerScreenBody> {
             children: [
               AreaPaneHeader(
                 needsTopBorder: false,
-                title: Text(
-                  'Registered Blocs',
-                  style: Theme.of(context).textTheme.titleMedium,
-                  textAlign: TextAlign.center,
+                title: SizedBox(
+                  width: 128,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Registered Blocs',
+                        style: Theme.of(context).textTheme.titleMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      StreamBuilder<BlocManagerRepositoryState>(
+                        stream:
+                            context.read<BlocManagerRepositoryCubit>().stream,
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            final state = snapshot.data;
+                            if (state is BlocManagerRepositoryLoaded) {
+                              final blocs = state.nodes;
+                              return Chip(label: Text('${blocs.length}'));
+                            }
+                          }
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const CenteredCircularProgressIndicator();
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      )
+                    ],
+                  ),
                 ),
               ),
-              Expanded(
-                child: StreamBuilder<BlocManagerRepositoryState>(
-                  stream: _nodesCubit.stream,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      final state = snapshot.data!;
-                      if (state is BlocManagerRepositoryLoaded) {
-                        final nodes = state.nodes;
-                        return ListView.builder(
-                          itemBuilder: (context, i) {
-                            final node = nodes[i];
-                            return ListTile(
-                              title: Text(node.blocName),
-                              subtitle: Text(node.fileUri),
-                            );
-                          },
-                          itemCount: nodes.length,
-                        );
-                      }
-                      if (state is BlocManagerRepositoryLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                    }
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    return const Center(child: Text('Unknown Error'));
-                  },
-                ),
-              ),
+              const Expanded(child: RegisteredBlocsList()),
             ],
           ),
         ),
