@@ -22,7 +22,7 @@ class BlocManagerRepositoryLoaded extends BlocManagerRepositoryState {
   final List<BlocNode> nodes;
 
   @override
-  List<Object> get props => [...nodes];
+  List<Object> get props => nodes;
 }
 
 class BlocManagerRepositoryFailure extends BlocManagerRepositoryState {

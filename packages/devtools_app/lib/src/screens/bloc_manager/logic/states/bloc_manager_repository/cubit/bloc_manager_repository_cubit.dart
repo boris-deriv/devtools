@@ -43,13 +43,3 @@ class BlocManagerRepositoryCubit extends Cubit<BlocManagerRepositoryState> {
     return items;
   }
 }
-
-class DisposableEvalOnLibrary extends EvalOnDartLibrary with Disposable {
-  DisposableEvalOnLibrary(
-    super.libraryName,
-    super.service, {
-    super.isolate,
-    super.disableBreakpoints = true,
-    super.oneRequestAtATime = false,
-  });
-}
