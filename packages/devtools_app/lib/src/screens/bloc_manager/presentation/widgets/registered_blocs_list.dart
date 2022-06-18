@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../../devtools_app.dart';
 import '../../logic/states/bloc_manager_repository/cubit/bloc_manager_repository_cubit.dart';
 
 class RegisteredBlocsList extends StatelessWidget {
@@ -31,14 +32,14 @@ class RegisteredBlocsList extends StatelessWidget {
             );
           }
           if (state is BlocManagerRepositoryLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const CenteredCircularProgressIndicator();
           }
         }
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const CenteredCircularProgressIndicator();
         }
 
-        return const Center(child: Text('Unknown Error'));
+        return const CenteredMessage('Unknown Error');
       },
     );
   }
