@@ -5,8 +5,10 @@ import '../../../../../devtools_app.dart';
 import '../../../../shared/eval_on_dart_library.dart';
 import '../../logic/states/bloc_manager_operation/bloc_manager_operation_cubit.dart';
 import '../../logic/states/bloc_manager_repository/cubit/bloc_manager_repository_cubit.dart';
+import '../../utils/cubit.dart';
 import '../../utils/extensions.dart';
 import '../widgets/bloc_manager_events_record.dart';
+import '../widgets/registered_blocs_counter.dart';
 import '../widgets/registered_blocs_list.dart';
 
 class BlocManagerScreen extends Screen {
@@ -17,11 +19,18 @@ class BlocManagerScreen extends Screen {
           requiresDartVm: true,
           icon: Icons.line_style_rounded,
           worksOffline: true,
-          requiresLibrary: libraryPath,
+          requiresLibrary: libraryURI,
         );
 
+  /// Id of the [BlocManagerScreen] screen.
   static const id = 'bloc_manager';
-  static const libraryPath = 'package:flutter_deriv_bloc_manager/manager.dart';
+
+  /// URI of the Bloc Manager package.
+  static const libraryURI = 'package:flutter_deriv_bloc_manager/manager.dart';
+
+  /// Path to the `BlocManager` class.
+  static const blocManagerClassPath =
+      'package:flutter_deriv_bloc_manager/bloc_managers/bloc_manager.dart';
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +42,12 @@ class BlocManagerScreen extends Screen {
           final service = snapshot.data!;
           return MultiProvider(
             providers: [
-              Provider(create: (context) => BlocManagerOperationsCubit()),
-              Provider(create: (context) => BlocManagerRepositoryCubit()),
+              CubitProvider<BlocManagerOperationsCubit>(
+                create: (context) => BlocManagerOperationsCubit(),
+              ),
+              CubitProvider<BlocManagerRepositoryCubit>(
+                create: (context) => BlocManagerRepositoryCubit(),
+              ),
             ],
             child: BlocManagerScreenBody(service: service),
           );
@@ -59,27 +72,15 @@ class BlocManagerScreenBody extends StatefulWidget {
 }
 
 class _BlocManagerScreenBodyState extends State<BlocManagerScreenBody> {
-  late final eval = EvalOnDartLibrary(
-    'package:flutter_deriv_bloc_manager/bloc_managers/bloc_manager.dart',
+  late final _eval = EvalOnDartLibrary(
+    BlocManagerScreen.blocManagerClassPath,
     widget.service,
   );
 
   @override
   void initState() {
     super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<BlocManagerRepositoryCubit>().getRegisteredBlocs(eval);
-      widget
-        ..service
-            .onExtensionEvent
-            .where((event) => event.isBlocManagerEvent)
-            .listen((event) {
-          if (mounted) {
-            context.read<BlocManagerOperationsCubit>().getOperations(event);
-          }
-        });
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _setupCubits());
   }
 
   @override
@@ -101,23 +102,7 @@ class _BlocManagerScreenBodyState extends State<BlocManagerScreenBody> {
                       style: Theme.of(context).textTheme.titleMedium,
                       textAlign: TextAlign.center,
                     ),
-                    StreamBuilder<BlocManagerRepositoryState>(
-                      stream: context.read<BlocManagerRepositoryCubit>().stream,
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData) {
-                          final state = snapshot.data;
-                          if (state is BlocManagerRepositoryLoaded) {
-                            final blocs = state.nodes;
-                            return Chip(label: Text('${blocs.length}'));
-                          }
-                        }
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CenteredCircularProgressIndicator();
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    )
+                    const RegisteredBlocsCounter()
                   ],
                 ),
               ),
@@ -144,9 +129,21 @@ class _BlocManagerScreenBodyState extends State<BlocManagerScreenBody> {
     );
   }
 
+  void _setupCubits() {
+    context.read<BlocManagerRepositoryCubit>().getRegisteredBlocs(_eval);
+
+    widget.service.onExtensionEvent
+        .where((event) => event.isBlocManagerEvent)
+        .listen((event) {
+      if (mounted) {
+        context.read<BlocManagerOperationsCubit>().getOperations(event);
+      }
+    });
+  }
+
   @override
   void dispose() {
-    eval.dispose();
+    _eval.dispose();
     super.dispose();
   }
 }
