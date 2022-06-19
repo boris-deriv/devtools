@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:provider/provider.dart';
+
 /// A minimal implementation of the `Cubit` class from the
 /// [flutter_bloc](https://pub.dev/packages/flutter_bloc) package.
 abstract class Cubit<S extends Object> {
@@ -26,4 +28,26 @@ abstract class Cubit<S extends Object> {
 
   /// Closes the connection with the [stream].
   Future<void> close() => _controller.close();
+}
+
+/// A [Provider] that provides [Cubit] objects and closes them when being
+/// disposed.
+class CubitProvider<C extends Cubit> extends Provider<C> {
+  CubitProvider({
+    required super.create,
+    super.builder,
+    super.child,
+    super.key,
+    super.lazy,
+  }) : super(
+          dispose: (context, cubit) => cubit.close(),
+        );
+
+  CubitProvider.value({
+    required super.value,
+    super.builder,
+    super.child,
+    super.updateShouldNotify,
+    super.key,
+  }) : super.value();
 }
