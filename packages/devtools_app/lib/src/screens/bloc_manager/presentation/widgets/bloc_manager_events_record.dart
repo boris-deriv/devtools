@@ -72,4 +72,10 @@ class _BlocManagerEventsRecordState extends State<BlocManagerEventsRecord> {
       ),
     );
   }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 }
