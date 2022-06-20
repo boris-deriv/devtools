@@ -6,7 +6,6 @@ import '../../../../shared/eval_on_dart_library.dart';
 import '../../logic/states/bloc_manager_operation/bloc_manager_operation_cubit.dart';
 import '../../logic/states/bloc_manager_repository/cubit/bloc_manager_repository_cubit.dart';
 import '../../utils/cubit.dart';
-import '../../utils/extensions.dart';
 import '../widgets/bloc_manager_events_record.dart';
 import '../widgets/registered_blocs_counter.dart';
 import '../widgets/registered_blocs_list.dart';
@@ -43,7 +42,7 @@ class BlocManagerScreen extends Screen {
           return MultiProvider(
             providers: [
               CubitProvider<BlocManagerOperationsCubit>(
-                create: (context) => BlocManagerOperationsCubit(),
+                create: (context) => BlocManagerOperationsCubit(service),
               ),
               CubitProvider<BlocManagerRepositoryCubit>(
                 create: (context) => BlocManagerRepositoryCubit(),
@@ -80,7 +79,11 @@ class _BlocManagerScreenBodyState extends State<BlocManagerScreenBody> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _setupCubits());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) {
+        context.read<BlocManagerRepositoryCubit>().getRegisteredBlocs(_eval);
+      },
+    );
   }
 
   @override
@@ -127,18 +130,6 @@ class _BlocManagerScreenBodyState extends State<BlocManagerScreenBody> {
         )
       ],
     );
-  }
-
-  void _setupCubits() {
-    context.read<BlocManagerRepositoryCubit>().getRegisteredBlocs(_eval);
-
-    widget.service.onExtensionEvent
-        .where((event) => event.isBlocManagerEvent)
-        .listen((event) {
-      if (mounted) {
-        context.read<BlocManagerOperationsCubit>().getOperations(event);
-      }
-    });
   }
 
   @override

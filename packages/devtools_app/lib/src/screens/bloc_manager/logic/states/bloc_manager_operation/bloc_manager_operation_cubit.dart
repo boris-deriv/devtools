@@ -12,8 +12,16 @@ part 'bloc_manager_operation_state.dart';
 
 /// A [Cubit] that manages the states of of [BlocManagerOperation].
 class BlocManagerOperationsCubit extends Cubit<OperationState> {
-  /// Initializes a new [BlocManagerOperationsCubit].
-  BlocManagerOperationsCubit() : super(const OperationInitial());
+  /// Initializes a new [BlocManagerOperationsCubit] and listens to events from
+  /// the passed [VmService].
+  ///
+  /// Every time a new [Event] is available, [getOperations] will get called.
+  BlocManagerOperationsCubit(VmService service)
+      : super(const OperationInitial()) {
+    service.onExtensionEvent
+        .where((event) => event.isBlocManagerEvent)
+        .listen(getOperations);
+  }
 
   /// Gets all the [BlocManagerOperation] object in the passed [event] then
   /// emit them in a [OperationLoaded]. If an error occurs, a [OperationFailed]
