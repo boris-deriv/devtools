@@ -10,8 +10,10 @@ abstract class Equatable {
 
   @override
   bool operator ==(Object other) =>
-      other.runtimeType == runtimeType ||
-      other is Equatable && listEquals(props, other.props);
+      identical(this, other) ||
+      other is Equatable &&
+          runtimeType == other.runtimeType &&
+          listEquals(props, other.props);
 
   @override
   String toString() => '$runtimeType($props)';
